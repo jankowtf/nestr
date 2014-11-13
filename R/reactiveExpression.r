@@ -4,6 +4,12 @@
 #' @description 
 #' Creates a reactive option expression. This is a convenience/encapsulation
 #' wrapper around \code{\link[reactr]{reactiveExpression}}.
+#' 
+#' @note 
+#' This is just a temporary solution for facilitating debugging the interaction
+#' with and the use of \code{\link[reactr]{reactiveExpression}} whose use is 
+#' the ultimate goal. That is also why the import of \code{\link{shiny}} is
+#' not clearly stated in \code{DESCRIPTION} and \code{NAMESPACE}.
 #'  
 #' @param expr \code{\link{expression}} (quoted or unquoted).
 #' @param where  \code{\link{environment}}.
@@ -21,7 +27,7 @@
 #' @template references
 #' @export 
 ## @import reactr
-#' @import shiny
+## @import shiny
 reactiveExpression <- function(
   expr, 
   where = parent.frame(), 
