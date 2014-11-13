@@ -14,58 +14,77 @@ test_that("setNested/basics", {
     value = TRUE,
     must_exist = TRUE
   ))
+  expect_warning(setNested(
+    id = "test/b", 
+    value = TRUE,
+    must_exist = TRUE,
+    strict = 1
+  ))
   expect_error(setNested(
     id = "test/b", 
     value = TRUE,
     must_exist = TRUE,
-    strict = TRUE
+    strict = 2
   ))
+  
+  ## Clean up //
+  rm(test)
   
 })
 
 ##------------------------------------------------------------------------------
 context("setNested/typed")
 ##------------------------------------------------------------------------------
-
-test_that("setNested/typed", {
   
-  ## Strict = 0 //
+test_that("setNested/typed/strict = 0", {
+  
   expect_true(setNested(
     id = "test/a", 
     value = "hello world!",
-    gap = TRUE,
     typed = TRUE
   ))
   expect_true(setNested(id = "test/a", value = 10))
   expect_identical(getNested("test/a"), "hello world!")
   
-  ## Strict = 1 //
+  ## Clean up //
+  rm(test)
+  
+})
+
+test_that("setNested/typed/strict = 1", {
+  
   expect_true(setNested(
     id = "test/a", 
     value = "hello world!",
     typed = TRUE,
-    strict_set = 1
+    strict = 1
   ))
   expect_warning(setNested(id = "test/a", value = 10))
   expect_identical(getNested("test/a"), "hello world!")
   
-  ## Strict = 2 //
+  ## Clean up //
+  rm(test)
+  
+})
+
+test_that("setNested/typed/strict = 2", {
+  
   expect_true(setNested(
     id = "test/a", 
     value = "hello world!",
     typed = TRUE,
-    strict_set = 2
+    strict = 2
   ))
   expect_error(setNested(id = "test/a", value = 10))
   expect_identical(getNested("test/a"), "hello world!")
   
-  expect_true(setNested(
-    id = "test/a", 
-    value = "something else"
-  ))
+  expect_true(setNested(id = "test/a", value = "something else"))
   expect_equal(getNested(id = "test/a"), "something else")
+
+  ## Clean up //
+  rm(test)
   
-})
+})  
 
 ##------------------------------------------------------------------------------
 context("setNested/numerical names/IDs")
@@ -84,10 +103,13 @@ context("setNested/gap")
 
 test_that("setNested/gap", {
 
-  expect_false(setNested(id = "a/b/c/d", value = TRUE))
-  expect_error(setNested(id = "a/b/c/d", value = TRUE, strict = TRUE))
-  expect_true(setNested(id = "a/b/c/d", value = TRUE, gap = TRUE))
+  expect_false(setNested(id = "a/b/c/d", value = TRUE, gap = FALSE))
+  expect_error(setNested(id = "a/b/c/d", value = TRUE, gap = FALSE, strict = 2))
+  expect_true(setNested(id = "a/b/c/d", value = TRUE))
   expect_equal(getNested(id = "a/b/c/d"), TRUE)
+  
+  ## Clean up //
+  rm(a)
   
 })
 
@@ -98,24 +120,27 @@ context("setNested/force")
 test_that("setNested/force 1", {
   
   expect_true(setNested(id = "a", value = "hello world!"))
-  expect_false(setNested(id = "a/b/c/d", value = TRUE, gap = TRUE))
-  expect_error(setNested(id = "a/b/c/d", value = TRUE, 
-     gap = TRUE, strict = TRUE))
-  expect_true(setNested(id = "a/b/c/d", value = TRUE, 
-     gap = TRUE, force = TRUE))
+  expect_false(setNested(id = "a/b/c/d", value = TRUE))
+  expect_error(setNested(id = "a/b/c/d", value = TRUE, strict = 2))
+  expect_true(setNested(id = "a/b/c/d", value = TRUE, force = TRUE))
   expect_equal(getNested(id = "a/b/c/d"), TRUE)
+
+  ## Clean up //
+  rm(a)
   
 })
 
 test_that("setNested/force 2", {
   
   expect_true(setNested(id = "a", value = "hello world!"))
-  expect_false(setNested(id = "a/b", value = TRUE, gap = TRUE))
-  expect_error(setNested(id = "a/b", value = TRUE, 
-     gap = TRUE, strict = TRUE))
+  expect_false(setNested(id = "a/b", value = TRUE))
+  expect_error(setNested(id = "a/b", value = TRUE, strict = 2))
   expect_true(setNested(id = "a/b", value = TRUE, force = TRUE))
   expect_equal(getNested(id = "a/b"), TRUE)
-   
+
+  ## Clean up //
+  rm(a)
+  
 })
 
 ##------------------------------------------------------------------------------
@@ -125,12 +150,15 @@ context("setNested/where")
 test_that("setNested/where", {
 
   where <- new.env()
-  expect_true(setNested(id = "a/b/c", value = 10, where = where, gap = TRUE))
+  expect_true(setNested(id = "a/b/c", value = 10, where = where))
   expect_equal(getNested(id = "a/b/c", where = where), 10)
   expect_true(exists("a", where))
   expect_true(exists("b", where$a))
   expect_true(exists("c", where$a$b))
   expect_identical(where$a$b$c, getNested("a/b/c", where))
+
+  ## Clean up //
+  rm(where)
   
 })
 
@@ -153,6 +181,9 @@ test_that("setNested/reactive/atomic/reactr::reactiveExpression", {
   expect_true(setNested(id = "x_1", value = FALSE))
   expect_equal(getNested(id = "x_2"), TRUE)
   
+  ## Clean up //
+  rm(x_1, x_2)
+  
 })
 
 ##------------------------------------------------------------------------------
@@ -174,6 +205,9 @@ test_that("setNested/reactive/atomic/nestr::reactiveExpression", {
   expect_true(setNested(id = "x_1", value = FALSE))
   expect_equal(getNested(id = "x_2"), TRUE)
 
+  ## Clean up //
+  rm(x_1, x_2)
+  
 })
 
 ##------------------------------------------------------------------------------
@@ -183,16 +217,18 @@ context("setNested/reactive/path")
 test_that("setNested/reactive/path", {
   
   skip("manual only due to environment/lexical scoping issues")
-  expect_true(setNested(id = "a/test", value = TRUE, reactive = TRUE, gap = TRUE))
+  expect_true(setNested(id = "a/test", value = TRUE, reactive = TRUE))
   expect_true(setNested(id = "b/test", 
     value = reactiveExpression(!getNested(id = "a/test", where = parent.frame(7))), 
-    reactive = TRUE, 
-    gap = TRUE
+    reactive = TRUE
   ))
   
   expect_equal(getNested(id = "b/test"), FALSE)
   expect_true(setNested(id = "a/test", value = FALSE))
   expect_equal(getNested(id = "a/test"), FALSE)
   expect_equal(getNested(id = "b/test"), TRUE)
-  
+
+  ## Clean up //
+  rm(a, b)
+
 })

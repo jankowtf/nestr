@@ -9,7 +9,7 @@ setNested(id = "test", value = TRUE)
 getNested(id = "test")
 
 ## Path-like name/ID //
-setNested(id = "test/a", value = TRUE, strict = TRUE)
+setNested(id = "test/a", value = TRUE, strict = 2)
 ## --> note that currently `test` is a leaf, not a branch
 setNested(id = "test/a", value = TRUE, force = TRUE)
 ## --> `test` needs to be transformed from a "leaf"
@@ -24,10 +24,10 @@ getNested(id = "test/a")
 
 ## Must exist //
 setNested(id = "test/b", value = TRUE, must_exist = TRUE)
-try(setNested(id = "test/b", value = TRUE, must_exist = TRUE, strict = TRUE))
+try(setNested(id = "test/b", value = TRUE, must_exist = TRUE, strict = 2))
 
 ## Typed //
-setNested(id = "test/c", value = "hello world!", typed = TRUE, gap = TRUE)
+setNested(id = "test/c", value = "hello world!", typed = TRUE)
 setNested(id = "test/c", value = 1:3)
 ## --> wrong class, but `strict_set = 0` --> disregarded without warning or error
 getNested(id = "test/c")
@@ -57,7 +57,7 @@ rm(test)
 ##------------------------------------------------------------------------------
 
 where <- new.env()
-setNested(id = "a/b/c", value = 10, where = where, gap = TRUE)
+setNested(id = "a/b/c", value = 10, where = where)
 getNested(id = "a/b/c", where = where)
 identical(getNested(id = "a/b/c", where = where), where$a$b$c)
 
@@ -79,12 +79,12 @@ rm("20140101")
 ## Branch gaps //
 ##------------------------------------------------------------------------------
   
-setNested(id = "a/b/c/d", value = TRUE)
-try(setNested(id = "a/b/c/d", value = TRUE, strict = TRUE))
+setNested(id = "a/b/c/d", value = TRUE, gap = FALSE)
+try(setNested(id = "a/b/c/d", value = TRUE, gap = FALSE, strict = 2))
 ## --> branch gap: branches a, b and c do not exist yet
 
 ## Closing the gap //
-setNested(id = "a/b/c/d", value = TRUE, gap = TRUE)
+setNested(id = "a/b/c/d", value = TRUE)
 
 ## Inspect //
 ls()
@@ -101,8 +101,8 @@ rm(a)
 ##------------------------------------------------------------------------------
   
 setNested(id = "a", value = "hello world!")
-setNested(id = "a/b", value = 10, gap = TRUE)
-try(setNested(id = "a/b", value = 10, gap = TRUE, strict = TRUE))
+setNested(id = "a/b", value = 10)
+try(setNested(id = "a/b", value = 10, strict = 2))
 ## --> root branch `a` is not an environment but a leaf:
 getNested(id = "a")
 
@@ -120,7 +120,7 @@ rm(a)
 ## Reactive object values //
 ##------------------------------------------------------------------------------
 
-setNested(id = "dirs/root", value = getwd(), reactive = TRUE, gap = TRUE)
+setNested(id = "dirs/root", value = getwd(), reactive = TRUE)
 setNested(
   id = "dirs/my_dir", 
   value = reactiveExpression(

@@ -6,8 +6,8 @@
 \title{Set Nested (char-any-miss)}
 \usage{
 \S4method{setNested}{character,ANY,missing}(id, value, where = parent.frame(),
-  must_exist = FALSE, typed = FALSE, force = FALSE, gap = FALSE,
-  strict = FALSE, reactive = FALSE, ...)
+  force = FALSE, gap = TRUE, must_exist = FALSE, reactive = FALSE,
+  strict = c(0, 1, 2), typed = FALSE, ...)
 }
 \arguments{
 \item{id}{\code{\link{character}}.}
@@ -15,17 +15,6 @@
 \item{value}{\code{\link{ANY}}.}
 
 \item{where}{\code{\link{missing}}.}
-
-\item{must_exist}{\code{\link{logical}}.
-\code{TRUE}: \code{id} pointing to a non-existing object value either triggers
-an error or results in return value \code{FALSE} (depending on \code{strict});
-\code{FALSE}: object value that \code{id} points to is set.}
-
-\item{typed}{\code{\link{logical}}.
-Implies that \code{must_exist} is automatically set to \code{TRUE}.
-\code{TRUE}: \code{class(value)} must match the class of the existing
-object value;
-\code{FALSE}: object value that \code{id} points to is set without class check.}
 
 \item{force}{\code{\link{logical}}.
 \code{TRUE}: when \code{dirname(id)} points to a \emph{leaf} instead of a
@@ -36,15 +25,17 @@ overwrite it to turn it into a branch;
 
 \item{gap}{\code{\link{logical}}.
 \code{TRUE}: when \code{dirname(id)} points to a non-existing parent
-branch or if there are any missing branches in the path tree,
+branch or if there are any missing branches in the tree structure,
 then auto-create all missing branches;
 \code{FALSE}: either return with \code{FALSE} or throw error in such cases
-(depending on \code{strict});}
+(depending on \code{strict});
+Default: \code{TRUE} as this seems to be most practical/convenient for
+actual applications.}
 
-\item{strict}{\code{\link{logical}}.
-\code{TRUE}: \code{id} pointing to a non-existing object value triggers
-error; \code{FALSE}: \code{id} pointing to a non-existing object value leads
-to return value \code{NULL}.}
+\item{must_exist}{\code{\link{logical}}.
+\code{TRUE}: \code{id} pointing to a non-existing object value either triggers
+an error or results in return value \code{FALSE} (depending on \code{strict});
+\code{FALSE}: object value that \code{id} points to is set.}
 
 \item{reactive}{\code{\link{logical}}.
 \code{TRUE}: set reactive object value via
@@ -52,6 +43,17 @@ to return value \code{NULL}.}
 \code{FALSE}: set regular/non-reactive object value.
 Note that if \code{value = reactiveExpression()}, \code{reactive} is
 automatically set to \code{TRUE}.}
+
+\item{strict}{\code{\link{logical}}.
+\code{TRUE}: \code{id} pointing to a non-existing object value triggers
+error; \code{FALSE}: \code{id} pointing to a non-existing object value leads
+to return value \code{NULL}.}
+
+\item{typed}{\code{\link{logical}}.
+Implies that \code{must_exist} is automatically set to \code{TRUE}.
+\code{TRUE}: \code{class(value)} must match the class of the existing
+object value;
+\code{FALSE}: object value that \code{id} points to is set without class check.}
 }
 \value{
 See method
@@ -72,7 +74,7 @@ setNested(id = "test", value = TRUE)
 getNested(id = "test")
 
 ## Path-like name/ID //
-setNested(id = "test/a", value = TRUE, strict = TRUE)
+setNested(id = "test/a", value = TRUE, strict = 2)
 ## --> note that currently `test` is a leaf, not a branch
 setNested(id = "test/a", value = TRUE, force = TRUE)
 ## --> `test` needs to be transformed from a "leaf"
@@ -87,10 +89,10 @@ getNested(id = "test/a")
 
 ## Must exist //
 setNested(id = "test/b", value = TRUE, must_exist = TRUE)
-try(setNested(id = "test/b", value = TRUE, must_exist = TRUE, strict = TRUE))
+try(setNested(id = "test/b", value = TRUE, must_exist = TRUE, strict = 2))
 
 ## Typed //
-setNested(id = "test/c", value = "hello world!", typed = TRUE, gap = TRUE)
+setNested(id = "test/c", value = "hello world!", typed = TRUE)
 setNested(id = "test/c", value = 1:3)
 ## --> wrong class, but `strict_set = 0` --> disregarded without warning or error
 getNested(id = "test/c")
@@ -120,7 +122,7 @@ rm(test)
 ##------------------------------------------------------------------------------
 
 where <- new.env()
-setNested(id = "a/b/c", value = 10, where = where, gap = TRUE)
+setNested(id = "a/b/c", value = 10, where = where)
 getNested(id = "a/b/c", where = where)
 identical(getNested(id = "a/b/c", where = where), where$a$b$c)
 
@@ -142,12 +144,12 @@ rm("20140101")
 ## Branch gaps //
 ##------------------------------------------------------------------------------
   
-setNested(id = "a/b/c/d", value = TRUE)
-try(setNested(id = "a/b/c/d", value = TRUE, strict = TRUE))
+setNested(id = "a/b/c/d", value = TRUE, gap = FALSE)
+try(setNested(id = "a/b/c/d", value = TRUE, gap = FALSE, strict = 2))
 ## --> branch gap: branches a, b and c do not exist yet
 
 ## Closing the gap //
-setNested(id = "a/b/c/d", value = TRUE, gap = TRUE)
+setNested(id = "a/b/c/d", value = TRUE)
 
 ## Inspect //
 ls()
@@ -164,8 +166,8 @@ rm(a)
 ##------------------------------------------------------------------------------
   
 setNested(id = "a", value = "hello world!")
-setNested(id = "a/b", value = 10, gap = TRUE)
-try(setNested(id = "a/b", value = 10, gap = TRUE, strict = TRUE))
+setNested(id = "a/b", value = 10)
+try(setNested(id = "a/b", value = 10, strict = 2))
 ## --> root branch `a` is not an environment but a leaf:
 getNested(id = "a")
 
@@ -183,7 +185,7 @@ rm(a)
 ## Reactive object values //
 ##------------------------------------------------------------------------------
 
-setNested(id = "dirs/root", value = getwd(), reactive = TRUE, gap = TRUE)
+setNested(id = "dirs/root", value = getwd(), reactive = TRUE)
 setNested(
   id = "dirs/my_dir", 
   value = reactiveExpression(

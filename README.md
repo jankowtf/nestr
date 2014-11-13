@@ -14,13 +14,13 @@ require("nestr")
 ```
 ## Purpose
 
-The package provides an extendable interface to conveniently create nested object structures based on using environments. 
+The package provides an extendable interface to conveniently create nested object structures based on environments. 
 
 Object values can be set and retrieved based on path-like names/identifiers (e.g. `output/print/type = "pdf"` will be translated into the following nested environment structure: `output$print$type` with the value being`"pdf"`). 
 
-Also, it allows to specify reactive nested object structures, i.e. objects that are dynamically linked to other objects and thus automatically stay synced.
+Also, it allows to specification of reactive nested object structures, i.e. objects that are dynamically linked to other objects and thus automatically stay synced.
 
-Furthermore, the package provides means totransform nested environment structures to nested lists and JSON objects.
+Furthermore, the package provides means to transform nested environment structures to nested lists and JSON objects and vice versa.
 
 ## Vignettes
 
@@ -34,24 +34,27 @@ None so far
 
 ```
 setNested(id = "a/b/c", value = 10, gap = TRUE)
+## --> structure: `environment()$a$b$c`; value: `10`
 ```
 ### Retrieve
 
 ```
 ls(getNested(id = "a"))
-## --> branch
+## --> branch (i.e. environment)
 ls(getNested(id = "a/b"))
-## --> branch
+## --> branch (i.e. environment)
 getNested(id = "a/b/c")
-## --> leaf
+## --> leaf (i.e. non-environment value; actual value of interest)
 ```
 
 ### Remove
 
 ```
 getNested(id = "a/b/c")
+## --> exists
 rmNested(id = "a/b/c")
 getNested(id = "a/b/c")
+## --> successfully removed
 getNested(id = "a/b/c", strict = TRUE)
 ```
 

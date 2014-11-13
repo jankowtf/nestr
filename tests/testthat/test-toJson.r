@@ -17,6 +17,5 @@ test_that(desc="toJson/custom envir", {
     south.america = 1
   )
   expect_is(res <- toJson(input = where), "json")
-  ## TODO: issue #2
   
 })

@@ -14,15 +14,6 @@
 #'    Object containing value information.
 #' @param where \strong{Signature argument}.
 #'    Object containing location information.  
-#' @param must_exist \code{\link{logical}}. 
-#'    \code{TRUE}: \code{id} pointing to a non-existing object value either triggers
-#'    an error or results in return value \code{FALSE} (depending on \code{strict}); 
-#'    \code{FALSE}: object value that \code{id} points to is set.
-#' @param typed \code{\link{logical}}. 
-#'    Implies that \code{must_exist} is automatically set to \code{TRUE}.
-#'    \code{TRUE}: \code{class(value)} must match the class of the existing 
-#'    object value; 
-#'    \code{FALSE}: object value that \code{id} points to is set without class check.
 #' @param force \code{\link{logical}}. 
 #'    \code{TRUE}: when \code{dirname(id)} points to a \emph{leaf} instead of a 
 #'    \emph{branch} (i.e. \code{dirname(id)} is not an \code{environment}), 
@@ -31,23 +22,37 @@
 #'    (depending on value of \code{strict}); 
 #' @param gap \code{\link{logical}}. 
 #'    \code{TRUE}: when \code{dirname(id)} points to a non-existing parent
-#'    branch or if there are any missing branches in the path tree, 
+#'    branch or if there are any missing branches in the tree structure, 
 #'    then auto-create all missing branches; 
 #'    \code{FALSE}: either return with \code{FALSE} or throw error in such cases
 #'    (depending on \code{strict}); 
-#' @param strict \code{\link{logical}}. 
-#'    \code{TRUE}: \code{id} pointing to a non-existing object value triggers
-#'    error; \code{FALSE}: \code{id} pointing to a non-existing object value leads
-#'    to return value \code{NULL}.
+#'    Default: \code{TRUE} as this seems to be most practical/convenient for 
+#'    actual applications.
+#' @param must_exist \code{\link{logical}}. 
+#'    \code{TRUE}: \code{id} pointing to a non-existing object value either triggers
+#'    an error or results in return value \code{FALSE} (depending on \code{strict}); 
+#'    \code{FALSE}: object value that \code{id} points to is set.
 #' @param reactive \code{\link{logical}}. 
 #'    \code{TRUE}: set reactive object value via 
 #'    \code{\link[nestr]{setReactive}} or \code{\link[nestr]{setShinyReactive}}.
 #'    \code{FALSE}: set regular/non-reactive object value.
 #'    Note that if \code{value = reactiveExpression()}, \code{reactive} is 
 #'    automatically set to \code{TRUE}.
+#' @param strict \code{\link{logical}}. 
+#'    \code{TRUE}: \code{id} pointing to a non-existing object value triggers
+#'    error; \code{FALSE}: \code{id} pointing to a non-existing object value leads
+#'    to return value \code{NULL}.
+#' @param typed \code{\link{logical}}. 
+#'    Implies that \code{must_exist} is automatically set to \code{TRUE}.
+#'    \code{TRUE}: \code{class(value)} must match the class of the existing 
+#'    object value; 
+#'    \code{FALSE}: object value that \code{id} points to is set without class check.
 #' @param Further arguments to be passed along to subsequent functions.
 #'    In particular: 
-#'    \code{\link[nestr]{setShinyReactive}}.
+#'    \itemize{
+#'      \item{\code{\link[nestr]{setShinyReactive}}}
+#'      \item{\code{\link[typr]{setTyped}}}
+#'    }
 #' @example inst/examples/setNested.r
 #' @seealso \code{
 #'   	\link[nestr]{setNested-char-any-char-method},
@@ -68,12 +73,12 @@ setGeneric(
     id,
     value,
     where = parent.frame(),
-    must_exist = FALSE, 
-    typed = FALSE,
     force = FALSE,
-    gap = FALSE,
-    strict = FALSE,
+    gap = TRUE,
+    must_exist = FALSE, 
     reactive = FALSE,
+    strict = c(0, 1, 2),
+    typed = FALSE,
     ...
   ) {
     standardGeneric("setNested")       
@@ -111,12 +116,12 @@ setMethod(
     id,
     value,
     where,
-    must_exist,
-    typed,
     force,
     gap,
-    strict,
+    must_exist,
     reactive,
+    strict,
+    typed,
     ...
   ) {
     
@@ -124,12 +129,12 @@ setMethod(
     id = id,
     value = value,
     where = where,
-    must_exist = must_exist,
-    typed = typed,
     force = force,
     gap = gap,
-    strict = strict,
+    must_exist = must_exist,
     reactive = reactive,
+    strict = strict,
+    typed = typed,
     ...
   )    
     
@@ -155,6 +160,7 @@ setMethod(
 #' @template references
 #' @aliases setNested-char-any-char-method
 #' @import reactr
+#' @import typr
 #' @export
 setMethod(
   f = "setNested", 
@@ -167,14 +173,18 @@ setMethod(
     id,
     value,
     where,
-    must_exist,
-    typed,
     force,
     gap,
-    strict,
+    must_exist,
     reactive,
+    strict,
+    typed,
     ...
   ) {
+    
+  ## Argument checks //
+  strict <- as.numeric(match.arg(as.character(strict), 
+    as.character(c(0, 1, 2))))    
     
   out <- TRUE
   container <- where
@@ -251,9 +261,21 @@ setMethod(
             ## Remove error entry //
             idx[which(idx == "error")] <- "no"
           } else {
-            if (!strict) {
+            if (strict == 0) {
               out <- FALSE
-            } else {
+            } else if (strict == 1) {
+              conditionr::signalCondition(
+                condition = "InvalidBranchConstellation",
+                msg = c(
+                  Reason = "parent branch is not an environment",
+                  ID = id,
+                  "ID branch" = id_branch_tree[idx_no]
+                ),
+                ns = "nestr",
+                type = "warning"
+              )
+              out <- FALSE
+            } else if (strict == 2) {
               conditionr::signalCondition(
                 condition = "InvalidBranchConstellation",
                 msg = c(
@@ -287,9 +309,20 @@ setMethod(
         }
       }
     } else {
-      if (!strict) {
+      if (strict == 0) {
         out <- FALSE
-      } else {
+      } else if (strict == 1) {
+        conditionr::signalCondition(
+          condition = "InvalidBranchConstellation",
+          msg = c(
+            Reason = "branch gap",
+            ID = id
+          ),
+          ns = "nestr",
+          type = "warning"
+        )
+        out <- FALSE
+      } else if (strict == 2) {
         conditionr::signalCondition(
           condition = "InvalidBranchConstellation",
           msg = c(
@@ -316,9 +349,22 @@ setMethod(
         "$", id_branch), " <- new.env()")
       eval(parse(text = expr_set))
     } else {
-      if (!strict) {
+      if (strict == 0) {
         out <- FALSE
-      } else {
+      } else if (strict == 1) {
+        conditionr::signalCondition(
+          condition = "InvalidBranchConstellation",
+          msg = c(
+            Reason = "parent branch is not an environment",
+            ID = id,
+            "ID branch" = id_branch,
+            "Class branch" = class(branch_value)
+          ),
+          ns = "nestr",
+          type = "warning"
+        )
+        out <- FALSE
+      } else if (strict == 2) {
         conditionr::signalCondition(
           condition = "InvalidBranchConstellation",
           msg = c(
@@ -342,9 +388,20 @@ setMethod(
   ## Must exist //
   if (must_exist) {
     if (!exists(basename(id), envir = branch_value, inherits = FALSE)) {
-      if (!strict) {
+      if (strict == 0) {
         out <- FALSE
-      } else {
+      } else if (strict == 1) {
+        conditionr::signalCondition(
+          condition = "StructurePrerequisitesNotMet",
+          msg = c(
+            Reason = "leaf does not exist yet",
+            ID = id
+          ),
+          ns = "nestr",
+          type = "warning"
+        )
+        out <- FALSE
+      } else if (strict == 2) {
         conditionr::signalCondition(
           condition = "StructurePrerequisitesNotMet",
           msg = c(
@@ -369,17 +426,25 @@ setMethod(
   path <- if (grepl("^\\./", id) || dirname(id) != ".") {
     paste0("[[\"", gsub("/", "\"]][[\"", dirname(id)), "\"]]")
   }
-  where <- eval(parse(text = paste0(envir_name, path)))
+  expr <- paste0(envir_name, path)
+# print(expr)
+  where <- eval(parse(text = expr))
+# print(where)
   reactive_exist <- isReactive(id = basename(id), where = where)
-
+  
   ## This takes care that reactive observers will always updated when this 
   ## function is run:
   is_reactive_value <- inherits(value, "ReactiveExpression")
   
-  if (!reactive && !typed || reactive_exist && !typed && !is_reactive_value) {  
-    path <- paste0("[[\"", gsub("/", "\"]][[\"", id), "\"]]")
-    expr <- paste0(envir_name, path, " <- value")
-    eval(parse(text = expr))  
+  if (!reactive || reactive_exist && !typed && !is_reactive_value) {  
+    if (!typed) {
+      path <- paste0("[[\"", gsub("/", "\"]][[\"", id), "\"]]")
+      expr <- paste0(envir_name, path, " <- value")
+      eval(parse(text = expr))  
+    } else {
+      setTyped(id = basename(id), value = value, where = where, 
+               strict = strict, ...)
+    }
   } else {
     setShinyReactive(id = basename(id), value = value, 
       where = where, typed = typed, ...)
