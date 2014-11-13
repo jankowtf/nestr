@@ -3,7 +3,7 @@
 \name{fromList,list,missing-method}
 \alias{fromList,list,missing-method}
 \alias{fromList-list-miss-method}
-\title{Get Nested (list-miss)}
+\title{From List (list-miss)}
 \usage{
 \S4method{fromList}{list,missing}(input, where = parent.frame(),
   strict = FALSE, ...)

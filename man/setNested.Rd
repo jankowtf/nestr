@@ -230,6 +230,7 @@ getNested(id = "dirs/my_dir")
 rm(dirs)
 
 }
+
 }
 \author{
 Janko Thyson \email{janko.thyson@rappster.de}

@@ -13,12 +13,11 @@ Object containing path-like name/ID information.}
 Object containing location information.}
 
 \item{default}{\code{\link{ANY}}.
-Value to be returned if option does not exist.
-See \code{\link[base]{getOption}}.}
+Value to be returned if component does not exist.}
 
 \item{strict}{\code{\link{logical}}.
-\code{TRUE}: \code{id} pointing to a non-existing option triggers
-error; \code{FALSE}: \code{id} pointing to a non-existing option leads
+\code{TRUE}: \code{id} pointing to a non-existing component triggers
+error; \code{FALSE}: \code{id} pointing to a non-existing component leads
 to return value \code{NULL}.}
 
 \item{...}{Further arguments to be passed to subsequent functions/methods.}

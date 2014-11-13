@@ -19,7 +19,7 @@ Object containing location information.}
 \item{...}{Further arguments to be passed to subsequent functions/methods.}
 }
 \description{
-Creates nested object structure based on \code{list} input.
+Creates a nested \code{environment} object structure.
 }
 \examples{
 \dontrun{

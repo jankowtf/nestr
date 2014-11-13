@@ -3,7 +3,7 @@
 \name{fromList,list,environment-method}
 \alias{fromList,list,environment-method}
 \alias{fromList-list-env-method}
-\title{Get Nested (list-env)}
+\title{From List (list-env)}
 \usage{
 \S4method{fromList}{list,environment}(input, where = parent.frame(),
   strict = FALSE, ...)
