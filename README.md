@@ -9,6 +9,7 @@ Nested object structures
 require("devtools")
 devtools::install_github("Rappster/conditionr")
 devtools::install_github("Rappster/reactr")
+devtools::install_github("Rappster/typr")
 devtools::install_github("Rappster/nestr")
 require("nestr")
 ```
