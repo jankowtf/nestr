@@ -34,12 +34,15 @@ rm(where)
 ##------------------------------------------------------------------------------
 
 rmNested(id = "a")
-try(rmNested(id = "a", strict = TRUE))
+try(rmNested(id = "a", strict = 1))
+try(rmNested(id = "a", strict = 2))
 
 rmNested(id = "a/b/c")
-try(rmNested(id = "a/b/c", strict = TRUE))
+try(rmNested(id = "a/b/c", strict = 1))
+try(rmNested(id = "a/b/c", strict = 2))
 
-rmNested(id = character())
-try(rmNested(id = character(), strict = TRUE))
+rmNested(id = character()))
+try(rmNested(id = character(), strict = 1))
+try(rmNested(id = character(), strict = 2))
     
 }

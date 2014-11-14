@@ -34,9 +34,18 @@ None so far
 ### Create
 
 ```
-setNested(id = "a/b/c", value = 10, gap = TRUE)
+setNested(id = "a/b/c", value = 10)
 ## --> structure: `environment()$a$b$c`; value: `10`
 ```
+
+Strictness:
+
+```
+try(setNested(id = "a", value = 10, strict = 1))
+try(setNested(id = "x_1/x_2", value = 10, gap = FALSE, strict = 1))
+try(setNested(id = "x_1/x_2", value = 10, gap = FALSE, strict = 2))
+```
+
 ### Retrieve
 
 ```
@@ -48,6 +57,74 @@ getNested(id = "a/b/c")
 ## --> leaf (i.e. non-environment value; actual value of interest)
 ```
 
+### Return value
+
+```
+(setNested(id = "test", value = 10, return_status = FALSE))
+## --> return value is `10` instead of `TRUE`
+getNested(id = "test")
+```
+These constellations lead to failed assignments:
+
+```
+(setNested(id = "a/b", value = 10, gap = FALSE, return_status = FALSE))
+## --> returns `NULL` as `fail_value = NULL`
+getNested(id = "a/b")
+## --> returns `NULL` as component does not exist and `default = NULL`
+getNested(id = "a/b", default = "does not exist")
+## --> returns `"does not exist"`
+
+(setNested(id = "a/b", value = 10, gap = FALSE, 
+  return_status = FALSE, fail_value = NA))
+## --> returns `NA` as `fail_value = NA`
+getNested(id = "a/b")
+## --> returns `NULL` as component does not exist and `default = NULL`
+```
+
+### Check existence 
+
+```
+##------------------------------------------------------------------------------
+## Basics //
+##------------------------------------------------------------------------------
+
+setNested(id = "test", value = TRUE)
+existsNested(id = "test")
+
+setNested(id = "a/b/c", value = 10)
+existsNested(id = "a")
+existsNested(id = "a/b")
+existsNested(id = "a/b/c")
+existsNested(id = "a/b/c/d")
+
+existsNested(id = "c")
+existsNested(id = "c/d/e")
+  
+##------------------------------------------------------------------------------
+## Strictness levels //
+##------------------------------------------------------------------------------
+
+## Empty ID //
+existsNested(id = character())
+try(existsNested(id = character(), strict = 1))
+try(existsNested(id = character(), strict = 2))
+
+## Not-existing //  
+existsNested(id = "c/d/e")
+try(existsNested(id = "c/d/e", strict = 1))
+try(existsNested(id = "c/d/e", strict = 2))
+
+##------------------------------------------------------------------------------
+## Explicit `where` //
+##------------------------------------------------------------------------------
+
+where <- new.env()
+setNested(id = "a/b/c", value = 10, where = where)
+existsNested(id = "a/b/c", where = where)
+existsNested(id = "a/b/c/d", where = where)
+existsNested(id = "c/d/e", where = where)
+```
+
 ### Remove
 
 ```
@@ -56,7 +133,25 @@ getNested(id = "a/b/c")
 rmNested(id = "a/b/c")
 getNested(id = "a/b/c")
 ## --> successfully removed
-getNested(id = "a/b/c", strict = TRUE)
+getNested(id = "a/b/c")
+## --> `NULL` as component does not exist and `default = NULL`
+getNested(id = "a/b/c", strict = 2)
+## --> error as component does not exist
+```
+Strictness:
+
+```
+rmNested(id = "a")
+try(rmNested(id = "a", strict = 1))
+try(rmNested(id = "a", strict = 2))
+
+rmNested(id = "a/b/c")
+try(rmNested(id = "a/b/c", strict = 1))
+try(rmNested(id = "a/b/c", strict = 2))
+
+rmNested(id = character()))
+try(rmNested(id = character(), strict = 1))
+try(rmNested(id = character(), strict = 2))
 ```
 
 ### Transforming nested object structures

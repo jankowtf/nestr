@@ -23,7 +23,7 @@ rm(test)
 rm(a)
 
 ##------------------------------------------------------------------------------
-## Different `where` //
+## Explicit `where` //
 ##------------------------------------------------------------------------------
 
 where <- new.env()
@@ -32,5 +32,21 @@ getNested(id = "a/b/c", where = where)
 
 ## Clean up //
 rm(where)
-  
+
+##------------------------------------------------------------------------------
+## Different `default` //
+##------------------------------------------------------------------------------
+
+setNested(id = "test", value = 10)
+getNested(id = "test", default = NA)
+getNested(id = "z", default = NA)
+getNested(id = "z/a/b", default = NA)
+
+getNested(id = "test", default = "nope")
+getNested(id = "z", default = "nope")
+getNested(id = "z/a/b", default = "nope")
+
+## Clean up //
+rm(test)
+
 }

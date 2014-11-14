@@ -88,9 +88,7 @@ setMethod(
 #' @inheritParams fromList
 #' @param input \code{\link{list}}.
 #' @param where \code{\link{environment}}.
-#' @return \code{\link{ANY}}. Option value or for non-existing option 
-#'    (i.e. wrong \code{input}): \code{NULL} if \code{strict = FALSE} and an error
-#'    if \code{strict = TRUE}.
+#' @return \code{\link{environment}}. Nested object structure.
 #' @example inst/examples/fromList.r
 #' @seealso \code{
 #'    \link[nestr]{fromList}

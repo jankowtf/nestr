@@ -94,9 +94,8 @@ setMethod(
 #' @inheritParams fromJson
 #' @param input \code{\link{json}}.
 #' @param where \code{\link{missing}}.
-#' @return \code{\link{ANY}}. Option value or for non-existing option 
-#'    (i.e. wrong \code{input}): \code{NULL} if \code{strict = FALSE} and an error
-#'    if \code{strict = TRUE}.
+#' @return See method 
+#' 		\code{\link[nestr]{fromJson-json-env-method}}.
 #' @example inst/examples/fromJson.r
 #' @seealso \code{
 #'    \link[nestr]{fromJson}
@@ -139,9 +138,7 @@ setMethod(
 #' @inheritParams fromJson
 #' @param input \code{\link{json}}.
 #' @param where \code{\link{environment}}.
-#' @return \code{\link{ANY}}. Option value or for non-existing option 
-#'    (i.e. wrong \code{input}): \code{NULL} if \code{strict = FALSE} and an error
-#'    if \code{strict = TRUE}.
+#' @return \code{\link{environment}}. Nested object structure.
 #' @example inst/examples/fromJson.r
 #' @seealso \code{
 #'    \link[nestr]{fromJson}
@@ -194,9 +191,7 @@ setMethod(
 #' @inheritParams fromJson
 #' @param input \code{\link{character}}.
 #' @param where \code{\link{environment}}.
-#' @return \code{\link{ANY}}. Option value or for non-existing option 
-#'    (i.e. wrong \code{input}): \code{NULL} if \code{strict = FALSE} and an error
-#'    if \code{strict = TRUE}.
+#' @return \code{\link{environment}}. Nested object structure.
 #' @example inst/examples/fromJson.r
 #' @seealso \code{
 #'    \link[nestr]{fromJson}

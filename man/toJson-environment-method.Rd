@@ -17,9 +17,7 @@
 \item{where}{\code{\link{environment}}.}
 }
 \value{
-\code{\link{ANY}}. Option value or for non-existing option
-   (i.e. wrong \code{input}): \code{NULL} if \code{strict = FALSE} and an error
-   if \code{strict = TRUE}.
+\code{\link{character}}. JSON string.
 }
 \description{
 See generic: \code{\link[nestr]{toJson}}
