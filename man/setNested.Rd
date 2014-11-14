@@ -3,9 +3,9 @@
 \alias{setNested}
 \title{Set Nested (generic)}
 \usage{
-setNested(id, value, where = parent.frame(), force = FALSE, gap = TRUE,
-  must_exist = FALSE, reactive = FALSE, strict = c(0, 1, 2),
-  typed = FALSE, ...)
+setNested(id, value, where = parent.frame(), fail_value = NULL,
+  force = FALSE, gap = TRUE, must_exist = FALSE, reactive = FALSE,
+  return_status = TRUE, strict = c(0, 1, 2), typed = FALSE, ...)
 }
 \arguments{
 \item{id}{\strong{Signature argument}.
@@ -16,6 +16,9 @@ Object containing value information.}
 
 \item{where}{\strong{Signature argument}.
 Object containing location information.}
+
+\item{fail_value}{\code{\link{ANY}}.
+Value that is returned if assignment failed and \code{return_status = FALSE}.}
 
 \item{force}{\code{\link{logical}}.
 \code{TRUE}: when \code{dirname(id)} points to a \emph{leaf} instead of a
@@ -45,10 +48,20 @@ an error or results in return value \code{FALSE} (depending on \code{strict});
 Note that if \code{value = reactiveExpression()}, \code{reactive} is
 automatically set to \code{TRUE}.}
 
+\item{return_status}{\code{\link{logical}}.
+     \code{TRUE}: return status (\code{TRUE} for successful assignment,
+         \code{FALSE} for failed assignment);
+\code{FALSE}: return actual assignment value (\code{value}).}
+
 \item{strict}{\code{\link{logical}}.
-\code{TRUE}: \code{id} pointing to a non-existing object value triggers
-error; \code{FALSE}: \code{id} pointing to a non-existing object value leads
-to return value \code{NULL}.}
+     Controls what happens when \code{id} points to a non-existing component:
+\itemize{
+         \item{0: }{ignore and return \code{FALSE} to signal that the
+             assignment process was not successful or \code{fail_value} depending
+             on the value of \code{return_status}}
+         \item{1: }{ignore and with warning and return \code{FALSE}}
+         \item{2: }{ignore and with error}
+   }}
 
 \item{typed}{\code{\link{logical}}.
 Implies that \code{must_exist} is automatically set to \code{TRUE}.
@@ -146,6 +159,28 @@ identical(getNested(id = "a/b/c", where = where), where$a$b$c)
 rm(where)
 
 ##------------------------------------------------------------------------------
+## Return value //
+##------------------------------------------------------------------------------
+
+(setNested(id = "test", value = 10, return_status = FALSE))
+## --> return value is `10` instead of `TRUE`
+getNested(id = "test")
+
+## Constellations that lead to failed assignment //
+(setNested(id = "a/b", value = 10, gap = FALSE, return_status = FALSE))
+## --> returns `NULL` as `fail_value = NULL`
+getNested(id = "a/b")
+## --> returns `NULL` as component does not exist and `default = NULL`
+getNested(id = "a/b", default = "does not exist")
+## --> returns `"does not exist"`
+
+(setNested(id = "a/b", value = 10, gap = FALSE, 
+  return_status = FALSE, fail_value = NA))
+## --> returns `NA` as `fail_value = NA`
+getNested(id = "a/b")
+## --> returns `NULL` as component does not exist and `default = NULL`
+
+##------------------------------------------------------------------------------
 ## Numerical names/IDs //
 ##------------------------------------------------------------------------------
 
@@ -184,7 +219,7 @@ rm(a)
 setNested(id = "a", value = "hello world!")
 setNested(id = "a/b", value = 10)
 try(setNested(id = "a/b", value = 10, strict = 2))
-## --> root branch `a` is not an environment but a leaf:
+## --> currently, `a` is leaf instead of a branch (environment):
 getNested(id = "a")
 
 ## Forcing leaf into a branch //
@@ -193,6 +228,25 @@ ls(getNested(id = "a"))
 ## --> branch 
 getNested(id = "a/b")
 ## --> leaf
+
+## Clean up //
+rm(a)
+
+##------------------------------------------------------------------------------
+## Forcing branches to leafs //
+##------------------------------------------------------------------------------
+
+setNested(id = "a/b", value = 10)
+setNested(id = "a", value = 10)
+try(setNested(id = "a", value = 10, strict = 2)
+## --> currently, `a` is a branch that contains leafs --> structural 
+## inconsistency and therefore blocked until `force = TRUE`
+
+## Forcing a branch into a leaf //
+## That means all potentially existing leafs of that branch are lost!
+setNested(id = "a", value = 10, force = TRUE)
+getNested(id = "a")
+## --> leaf 
 
 ## Clean up //
 rm(a)

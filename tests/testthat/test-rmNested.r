@@ -8,7 +8,7 @@ test_that("rmNested", {
   expect_true(rmNested(id = "a"))
   expect_false(exists("a", environment(), inherits = FALSE))
   
-  setNested(id = "a/b/c", value = 10, gap = TRUE)
+  setNested(id = "a/b/c", value = 10)
   expect_true(rmNested(id = "a/b/c"))
   expect_false(exists("c", environment()$a$b, inherits = FALSE))
   expect_true(rmNested(id = "a"))
@@ -36,12 +36,15 @@ context("rmNested/strict")
 test_that("rmNested/strict", {
 
   expect_false(rmNested(id = "a"))
-  expect_error(rmNested(id = "a", strict = TRUE))
+  expect_warning(expect_false(rmNested(id = "a", strict = 1)))
+  expect_error(rmNested(id = "a", strict = 2))
   
   expect_false(rmNested(id = "a/b/c"))
-  expect_error(rmNested(id = "a/b/c", strict = TRUE))
+  expect_warning(expect_false(rmNested(id = "a/b/c", strict = 1)))
+  expect_error(rmNested(id = "a/b/c", strict = 2))
   
   expect_false(rmNested(id = character()))
-  expect_error(rmNested(id = character(), strict = TRUE))
+  expect_warning(expect_false(rmNested(id = character(), strict = 1)))
+  expect_error(rmNested(id = character(), strict = 2))
       
 })

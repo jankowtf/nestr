@@ -1,10 +1,10 @@
 #' @title
-#' Remove Nested (generic)
+#' Exists Nested (generic)
 #'
 #' @description 
-#' Removes a component from a nested object structure based on a path-like 
-#' \code{id} with the last ID component being the name of the actual object 
-#' being removed.
+#' Checks if a component exists inside of a nested object structure 
+#' based on a path-like \code{id} with the last ID component being the 
+#' actual object name that the function looks for.
 #' 
 #' @template path-like-ids
 #'   	
@@ -13,7 +13,7 @@
 #' @param where \strong{Signature argument}.
 #'    Object containing location information.  
 #' @param strict \code{\link{logical}}.
-#' 		Controls what happens when \code{id} points to a non-existing component:
+#'   	Controls what happens when \code{id} points to a non-existing component:
 #'    \itemize{
 #' 			\item{0: }{ignore and return \code{FALSE} to signal that the 
 #' 				assignment process was not successful or \code{fail_value} depending
@@ -22,18 +22,18 @@
 #' 			\item{2: }{ignore and with error}
 #'   	}
 #' @template threedots
-#' @example inst/examples/rmNested.r
+#' @example inst/examples/existsNested.r
 #' @seealso \code{
-#'   	\link[nestr]{rmNested-char-env-method},
+#'   	\link[nestr]{existsNested-char-env-method},
 #'     \link[nestr]{setNested},
-#'     \link[nestr]{getNested}
+#'     \link[nestr]{getNested},
+#'     \link[nestr]{rmNested}
 #' }
 #' @template author
 #' @template references
-#' @import devtools
 #' @export 
 setGeneric(
-  name = "rmNested",
+  name = "existsNested",
   signature = c(
     "id",
     "where"
@@ -44,31 +44,31 @@ setGeneric(
     strict = c(0, 1, 2), 
     ...
   ) {
-    standardGeneric("rmNested")       
+    standardGeneric("existsNested")       
   }
 )
 
 #' @title
-#' Remove Nested (char-miss)
+#' Exists Nested (char-miss)
 #'
 #' @description 
-#' See generic: \code{\link[nestr]{rmNested}}
+#' See generic: \code{\link[nestr]{existsNested}}
 #'      
-#' @inheritParams rmNested
+#' @inheritParams existsNested
 #' @param id \code{\link{character}}.
 #' @param where \code{\link{missing}}.
 #' @return See method 
-#'    \code{\link[nestr]{rmNested-char-env-method}}
-#' @example inst/examples/rmNested.r
+#'    \code{\link[nestr]{existsNested-char-char-method}}
+#' @example inst/examples/existsNested.r
 #' @seealso \code{
-#'    \link[nestr]{rmNested}
+#'    \link[nestr]{existsNested}
 #' }
 #' @template author
 #' @template references
-#' @aliases rmNested-char-miss-method
+#' @aliases existsNested-char-miss-method
 #' @export
 setMethod(
-  f = "rmNested", 
+  f = "existsNested", 
   signature = signature(
     id = "character",
     where = "missing"
@@ -80,7 +80,7 @@ setMethod(
     ...
   ) {
  
-  rmNested(
+  existsNested(
     id = id,
     where = where,
     strict = strict,
@@ -91,28 +91,28 @@ setMethod(
 )
 
 #' @title
-#' Remove Nested (char-env)
+#' Exists Nested (char-env)
 #'
 #' @description 
-#' See generic: \code{\link[nestr]{rmNested}}
+#' See generic: \code{\link[nestr]{existsNested}}
 #'   	 
-#' @inheritParams rmNested
+#' @inheritParams existsNested
 #' @param id \code{\link{character}}.
 #' @param where \code{\link{environment}}.
 #' @return \code{\link{logical}}. 
-#'    \code{TRUE}: removal successful;
-#'    \code{FALSE}: removal failed.
-#' @example inst/examples/rmNested.r
+#' 		\code{TRUE}: component exists;
+#' 		\code{TRUE}: component does not exist;
+#' @example inst/examples/existsNested.r
 #' @seealso \code{
-#'    \link[nestr]{rmNested}
+#'    \link[nestr]{existsNested}
 #' }
 #' @template author
 #' @template references
-#' @aliases rmNested-char-env-method
+#' @aliases existsNested-char-miss-method
 #' @import conditionr
 #' @export
 setMethod(
-  f = "rmNested", 
+  f = "existsNested", 
   signature = signature(
     id = "character",
     where = "environment"
@@ -123,27 +123,25 @@ setMethod(
     strict,
     ...
   ) {
-
+    
   ## Argument checks //
   strict <- as.numeric(match.arg(as.character(strict), 
-      as.character(c(0, 1, 2))))     
-    
+    as.character(c(0, 1, 2))))     
+
+  out <- FALSE
   if (!length(id)) {
-    if (strict == 0) {
-      out <- FALSE
-    } else if (strict == 1) {
+    if (strict == 1) {
       conditionr::signalCondition(
-        condition = "RemovalFailed",
+        condition = "InvalidComponent",
         msg = c(
           Reason = "Empty ID"
         ),
         ns = "optionr",
         type = "warning"
       )
-      out <- FALSE
     } else if (strict == 2) {
       conditionr::signalCondition(
-        condition = "RemovalFailed",
+        condition = "InvalidComponent",
         msg = c(
           Reason = "Empty ID"
         ),
@@ -152,26 +150,20 @@ setMethod(
       )
     }
   } else {
-    container <- where
-    envir_name <- "container"
-
     path <- if (grepl("^\\./", id) || dirname(id) != ".") {
       paste0("[[\"", gsub("/", "\"]][[\"", dirname(id)), "\"]]")
     }
-    where <- eval(parse(text = paste0(envir_name, path)))
-    if (  is.null(where) ||
-          !exists(basename(id), envir = where, inherits = FALSE)) {
-      out <- NULL
+    where <- eval(parse(text = paste0("where", path)))
+    out <- if (!is.null(where) && inherits(where, "environment")) {
+      exists(basename(id), envir = where, inherits = FALSE)
     } else {
-      rm(list = basename(id), envir = where, inherits = FALSE)
-      out <- TRUE
+      FALSE
     }
-    if (is.null(out)) {
-      if (strict == 0) {
-        out <- FALSE
-      } else if (strict == 1) {
+
+    if (!out) {
+      if (strict == 1) {
         conditionr::signalCondition(
-          condition = "RemovalFailed",
+          condition = "InvalidComponent",
           msg = c(
             Reason = "no such component",
             ID = id
@@ -179,10 +171,9 @@ setMethod(
           ns = "optionr",
           type = "warning"
         )
-        out <- FALSE
       } else if (strict == 2) {
         conditionr::signalCondition(
-          condition = "RemovalFailed",
+          condition = "InvalidComponent",
           msg = c(
             Reason = "no such component",
             ID = id

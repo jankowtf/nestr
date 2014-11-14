@@ -18,9 +18,8 @@
 \code{FALSE}:}
 }
 \value{
-\code{\link{ANY}}. Option value or for non-existing option
-   (i.e. wrong \code{input}): \code{NULL} if \code{strict = FALSE} and an error
-   if \code{strict = TRUE}.
+See method
+		\code{\link[nestr]{fromJson-json-env-method}}.
 }
 \description{
 See generic: \code{\link[nestr]{fromJson}}

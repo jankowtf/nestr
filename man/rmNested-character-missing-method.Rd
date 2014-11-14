@@ -6,7 +6,7 @@
 \title{Remove Nested (char-miss)}
 \usage{
 \S4method{rmNested}{character,missing}(id, where = parent.frame(),
-  strict = FALSE, ...)
+  strict = c(0, 1, 2), ...)
 }
 \arguments{
 \item{id}{\code{\link{character}}.}
@@ -14,13 +14,14 @@
 \item{where}{\code{\link{missing}}.}
 
 \item{strict}{\code{\link{logical}}.
-\code{TRUE}: the following constellations trigger an error:
+     Controls what happens when \code{id} points to a non-existing component:
 \itemize{
-    \item{\code{id} pointing to a non-existing component}
-    \item{empty \code{id}}
-}
-\code{FALSE}: the stated constellations lead to the return value
-being \code{FALSE}.}
+         \item{0: }{ignore and return \code{FALSE} to signal that the
+             assignment process was not successful or \code{fail_value} depending
+             on the value of \code{return_status}}
+         \item{1: }{ignore and with warning and return \code{FALSE}}
+         \item{2: }{ignore and with error}
+   }}
 
 \item{...}{Further arguments to be passed to subsequent functions/methods.}
 }
@@ -68,13 +69,16 @@ rm(where)
 ##------------------------------------------------------------------------------
 
 rmNested(id = "a")
-try(rmNested(id = "a", strict = TRUE))
+try(rmNested(id = "a", strict = 1))
+try(rmNested(id = "a", strict = 2))
 
 rmNested(id = "a/b/c")
-try(rmNested(id = "a/b/c", strict = TRUE))
+try(rmNested(id = "a/b/c", strict = 1))
+try(rmNested(id = "a/b/c", strict = 2))
 
-rmNested(id = character())
-try(rmNested(id = character(), strict = TRUE))
+rmNested(id = character()))
+try(rmNested(id = character(), strict = 1))
+try(rmNested(id = character(), strict = 2))
     
 }
 }

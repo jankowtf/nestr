@@ -1,3 +1,28 @@
+# CHANGES IN nestr VERSION 0.3
+
+## NEW FEATURES
+
+- added: `existsNested()`
+- added: `getNestedClass()`
+
+## BUG FIXES
+
+- a couple of minor bug fixes
+
+## MAJOR CHANGES
+
+- modified: argument `strict` is now consistently a numerical vector with values `c(0, 1, 2)
+
+## MINOR CHANGES
+
+- minor structural changes in:
+  - `setNested()`
+  - `getNested()`
+
+## MISC
+
+-----
+
 # CHANGES IN nestr VERSION 0.2
 
 ## NEW FEATURES

@@ -13,7 +13,9 @@
 #' @param value \strong{Signature argument}.
 #'    Object containing value information.
 #' @param where \strong{Signature argument}.
-#'    Object containing location information.  
+#'    Object containing location information.
+#' @param fail_value \code{\link{ANY}}.
+#' 		Value that is returned if assignment failed and \code{return_status = FALSE}.  
 #' @param force \code{\link{logical}}. 
 #'    \code{TRUE}: when \code{dirname(id)} points to a \emph{leaf} instead of a 
 #'    \emph{branch} (i.e. \code{dirname(id)} is not an \code{environment}), 
@@ -38,10 +40,19 @@
 #'    \code{FALSE}: set regular/non-reactive object value.
 #'    Note that if \code{value = reactiveExpression()}, \code{reactive} is 
 #'    automatically set to \code{TRUE}.
-#' @param strict \code{\link{logical}}. 
-#'    \code{TRUE}: \code{id} pointing to a non-existing object value triggers
-#'    error; \code{FALSE}: \code{id} pointing to a non-existing object value leads
-#'    to return value \code{NULL}.
+#' @param return_status \code{\link{logical}}.
+#' 		\code{TRUE}: return status (\code{TRUE} for successful assignment, 
+#' 			\code{FALSE} for failed assignment);
+#'    \code{FALSE}: return actual assignment value (\code{value}).
+#' @param strict \code{\link{logical}}.
+#' 		Controls what happens when \code{id} points to a non-existing component:
+#'    \itemize{
+#' 			\item{0: }{ignore and return \code{FALSE} to signal that the 
+#' 				assignment process was not successful or \code{fail_value} depending
+#' 				on the value of \code{return_status}} 
+#' 			\item{1: }{ignore and with warning and return \code{FALSE}}
+#' 			\item{2: }{ignore and with error}
+#'   	}
 #' @param typed \code{\link{logical}}. 
 #'    Implies that \code{must_exist} is automatically set to \code{TRUE}.
 #'    \code{TRUE}: \code{class(value)} must match the class of the existing 
@@ -73,10 +84,12 @@ setGeneric(
     id,
     value,
     where = parent.frame(),
+    fail_value = NULL,
     force = FALSE,
     gap = TRUE,
     must_exist = FALSE, 
     reactive = FALSE,
+    return_status = TRUE,
     strict = c(0, 1, 2),
     typed = FALSE,
     ...
@@ -116,10 +129,12 @@ setMethod(
     id,
     value,
     where,
+    fail_value,
     force,
     gap,
     must_exist,
     reactive,
+    return_status,
     strict,
     typed,
     ...
@@ -129,10 +144,12 @@ setMethod(
     id = id,
     value = value,
     where = where,
+    fail_value = fail_value,
     force = force,
     gap = gap,
     must_exist = must_exist,
     reactive = reactive,
+    return_status = return_status,
     strict = strict,
     typed = typed,
     ...
@@ -173,10 +190,12 @@ setMethod(
     id,
     value,
     where,
+    fail_value,
     force,
     gap,
     must_exist,
     reactive,
+    return_status,
     strict,
     typed,
     ...
@@ -185,8 +204,11 @@ setMethod(
   ## Argument checks //
   strict <- as.numeric(match.arg(as.character(strict), 
     as.character(c(0, 1, 2))))    
-    
+   
+  ## Return value initialization //
   out <- TRUE
+  
+  ## Actual container/environment //
   container <- where
   envir_name <- "container"
   
@@ -200,7 +222,7 @@ setMethod(
     branch_value <- container
   } else {
     branch_value <- tryCatch(
-      getNested(id = id_branch, where = where, strict = FALSE),
+      getNested(id = id_branch, where = where, strict = 0),
       error = function(cond) {
         NULL
       }
@@ -251,7 +273,8 @@ setMethod(
             setNested(
               id = id_branch_tree[idx_no],
               value = new.env(),
-              where = where
+              where = where,
+              strict = 0
             )
             
             ## Update `idx` and `expr_set` //
@@ -291,7 +314,7 @@ setMethod(
         }
       }
       
-      ## Gap not-yet-existing branch(es) //
+      ## Close gap for not-yet-existing branch(es) //
       idx_no <- which(idx == "no")
       if (out) {
         if (length(idx_no)) {
@@ -305,7 +328,7 @@ setMethod(
             eval(parse(text = expr_set[ii]))
           })  
           branch_value <- getNested(id = id_branch, 
-            where = where, strict = FALSE)
+            where = where, strict = 0)
         }
       }
     } else {
@@ -338,16 +361,18 @@ setMethod(
 
   ## Early exit //
   if (!out) {
-    return(out)
+    return(if (return_status) FALSE else fail_value)
   }
 
-  ## Parent branch is no environment //
+  ## Leaf to branch (parent branch is not an environment) //
   if (!inherits(branch_value, "environment")) {
     if (force) {
     ## Transform to branch //
       expr_set <- paste0(envir_name, "$", gsub("/", 
         "$", id_branch), " <- new.env()")
-      eval(parse(text = expr_set))
+      
+      ## This also updates `branch_value` //
+      branch_value <- eval(parse(text = expr_set))
     } else {
       if (strict == 0) {
         out <- FALSE
@@ -382,7 +407,48 @@ setMethod(
 
   ## Early exit //
   if (!out) {
-    return(out)
+    return(if (return_status) FALSE else fail_value)
+  }
+
+  ## Branch into a leaf //
+  if (  exists(basename(id), branch_value, inherits = FALSE) && 
+        inherits(get(basename(id), branch_value, inherits = FALSE), "environment")
+## TODO: issue #2
+## The actual `get()` for class lookup might cost too much in certain situations
+## Find out if there are better ways to "just get the class info" or if there 
+## is any other way to handle this part more efficiently
+  ) {
+    if (!force) {
+      if (strict == 0) {
+        out <- FALSE
+      } else if (strict == 1) {
+        conditionr::signalCondition(
+          condition = "InvalidBranchConstellation",
+          msg = c(
+            Reason = "trying to turn a branch into a leaf",
+            "ID branch" = id
+          ),
+          ns = "nestr",
+          type = "warning"
+        )
+        out <- FALSE
+      } else if (strict == 2) {
+        conditionr::signalCondition(
+          condition = "InvalidBranchConstellation",
+          msg = c(
+            Reason = "trying to turn a branch into a leaf",
+            "ID branch" = id
+          ),
+          ns = "nestr",
+          type = "error"
+        )
+      }
+    }
+  }
+
+  ## Early exit //
+  if (!out) {
+    return(if (return_status) FALSE else fail_value)
   }
 
   ## Must exist //
@@ -417,20 +483,13 @@ setMethod(
 
   ## Early exit //
   if (!out) {
-    return(out)
+    return(if (return_status) FALSE else fail_value)
   }
 
   ## Auto-check if reactive //
   ## This significantly speeds up the assignment process for reactive *sources* 
   ## that already exist as `setShinyReactive()` does not need to be called again
-  path <- if (grepl("^\\./", id) || dirname(id) != ".") {
-    paste0("[[\"", gsub("/", "\"]][[\"", dirname(id)), "\"]]")
-  }
-  expr <- paste0(envir_name, path)
-# print(expr)
-  where <- eval(parse(text = expr))
-# print(where)
-  reactive_exist <- isReactive(id = basename(id), where = where)
+  reactive_exist <- isReactive(id = basename(id), where = branch_value)
   
   ## This takes care that reactive observers will always updated when this 
   ## function is run:
@@ -441,16 +500,22 @@ setMethod(
       path <- paste0("[[\"", gsub("/", "\"]][[\"", id), "\"]]")
       expr <- paste0(envir_name, path, " <- value")
       eval(parse(text = expr))  
-    } else {
-      setTyped(id = basename(id), value = value, where = where, 
+    } else {  
+      setTyped(id = basename(id), value = value, where = branch_value, 
                strict = strict, ...)
     }
   } else {
     setShinyReactive(id = basename(id), value = value, 
-      where = where, typed = typed, ...)
+      where = branch_value, typed = typed, ...)
   }
 
-  return(out)
+  return(
+    if (!out) {
+      if (return_status) FALSE else fail_value
+    } else {
+      if (return_status) TRUE else value
+    }
+  )
   
   }
 )

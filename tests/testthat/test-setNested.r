@@ -1,3 +1,18 @@
+if (FALSE) {
+  ## Default values //
+  id = "a/b"
+  value = 10
+  where = parent.frame()
+  fail_value = NULL
+  force = FALSE
+  gap = TRUE
+  must_exist = FALSE
+  reactive = FALSE
+  return_status = TRUE
+  strict = c(0, 1, 2)
+  typed = FALSE
+}
+
 ##------------------------------------------------------------------------------
 context("setNested/basics")
 ##------------------------------------------------------------------------------
@@ -26,6 +41,33 @@ test_that("setNested/basics", {
     must_exist = TRUE,
     strict = 2
   ))
+  
+  ## Clean up //
+  rm(test)
+  
+})
+
+##------------------------------------------------------------------------------
+context("setNested/return value")
+##------------------------------------------------------------------------------
+
+test_that("setNested/return value", {
+
+  expect_equal(setNested(id = "test", value = 10, return_status = FALSE), 10)
+  expect_equal(getNested(id = "test"), 10)
+  
+  expect_equal(setNested(id = "a/b", value = 10, return_status = FALSE), 10)
+  expect_equal(getNested(id = "a/b"), 10)
+  rm(a)
+  
+  ## Constellations that lead to failed assignment //
+  expect_equal(setNested(id = "a/b", value = 10, gap = FALSE, 
+                         return_status = FALSE), NULL)
+  expect_equal(getNested(id = "a/b"), NULL)
+  
+  expect_equal(setNested(id = "a/b", value = 10, gap = FALSE, 
+    return_status = FALSE, fail_value = NA), NA)
+  expect_equal(getNested(id = "a/b"), NULL)
   
   ## Clean up //
   rm(test)
@@ -117,7 +159,7 @@ test_that("setNested/gap", {
 context("setNested/force")
 ##------------------------------------------------------------------------------
 
-test_that("setNested/force 1", {
+test_that("setNested/force leaf to branch", {
   
   expect_true(setNested(id = "a", value = "hello world!"))
   expect_false(setNested(id = "a/b/c/d", value = TRUE))
@@ -130,7 +172,7 @@ test_that("setNested/force 1", {
   
 })
 
-test_that("setNested/force 2", {
+test_that("setNested/force leaf to branch", {
   
   expect_true(setNested(id = "a", value = "hello world!"))
   expect_false(setNested(id = "a/b", value = TRUE))
@@ -143,11 +185,24 @@ test_that("setNested/force 2", {
   
 })
 
+test_that("setNested/force branch to leaf", {
+  
+  expect_true(setNested(id = "a/b", value = 10))
+  expect_false(setNested(id = "a", value = 10))
+  expect_error(setNested(id = "a", value = 10, strict = 2))
+  expect_true(setNested(id = "a", value = 10, force = TRUE))
+  expect_equal(getNested(id = "a"), 10)
+
+  ## Clean up //
+  rm(a)
+  
+})
+
 ##------------------------------------------------------------------------------
-context("setNested/where")
+context("setNested/explicit where")
 ##------------------------------------------------------------------------------
 
-test_that("setNested/where", {
+test_that("setNested/explicit where", {
 
   where <- new.env()
   expect_true(setNested(id = "a/b/c", value = 10, where = where))

@@ -14,10 +14,15 @@
 #'    Object containing location information.  
 #' @param default \code{\link{ANY}}. 
 #'    Value to be returned if component does not exist. 
-#' @param strict \code{\link{logical}}. 
-#'    \code{TRUE}: \code{id} pointing to a non-existing component triggers
-#'    error; \code{FALSE}: \code{id} pointing to a non-existing component leads
-#'    to return value \code{NULL}.
+#' @param strict \code{\link{logical}}.
+#'     Controls what happens when \code{id} points to a non-existing component:
+#'    \itemize{
+#' 			\item{0: }{ignore and return \code{FALSE} to signal that the 
+#' 				assignment process was not successful or \code{fail_value} depending
+#' 				on the value of \code{return_status}} 
+#' 			\item{1: }{ignore and with warning and return \code{FALSE}}
+#' 			\item{2: }{ignore and with error}
+#'   	}
 #' @template threedots
 #' @example inst/examples/getNested.r
 #' @seealso \code{
@@ -38,7 +43,7 @@ setGeneric(
     id,
     where = parent.frame(),
     default = NULL,
-    strict = FALSE, 
+    strict = c(0, 1, 2), 
     ...
   ) {
     standardGeneric("getNested")       
@@ -98,9 +103,9 @@ setMethod(
 #' @inheritParams getNested
 #' @param id \code{\link{character}}.
 #' @param where \code{\link{environment}}.
-#' @return \code{\link{ANY}}. Option value or for non-existing component 
-#'    (i.e. wrong \code{id}): \code{NULL} if \code{strict = FALSE} and an error
-#'    if \code{strict = TRUE}.
+#' @return \code{\link{ANY}}. Component value or for invalid argument input 
+#' 		and non-existing component the value of \code{default} unless 
+#' 		\code{strict == 2} in which case an error is thrown. 
 #' @example inst/examples/getNested.r
 #' @seealso \code{
 #'    \link[nestr]{getNested}
@@ -124,10 +129,22 @@ setMethod(
     ...
   ) {
 
+  ## Argument checks //
+  strict <- as.numeric(match.arg(as.character(strict), 
+    as.character(c(0, 1, 2))))   
+    
+  out <- default
   if (!length(id)) {
-    if (!strict) {
-      out <- NULL
-    } else {
+    if (strict == 1) {
+      conditionr::signalCondition(
+        condition = "InvalidComponent",
+        msg = c(
+          Reason = "Empty ID"
+        ),
+        ns = "optionr",
+        type = "warning"
+      )
+    } else if (strict == 2) {
       conditionr::signalCondition(
         condition = "InvalidComponent",
         msg = c(
@@ -138,32 +155,35 @@ setMethod(
       )
     }
   } else {
-    container <- where
-    envir_name <- "container"
-# print(where)    
-# print(ls(where))    
-# print(missing(default))    
-#     if (missing(default)) {
-#       path <- paste0("[[\"", gsub("/", "\"]][[\"", id), "\"]]")
-#       expr <- paste0(envir_name, path)
-#       out <- eval(parse(text = expr))  
-#     } else {
-      path <- if (grepl("^\\./", id) || dirname(id) != ".") {
-        paste0("[[\"", gsub("/", "\"]][[\"", dirname(id)), "\"]]")
-      }
-      where <- eval(parse(text = paste0(envir_name, path)))
-      if (  is.null(where) ||
-            !exists(basename(id), envir = where, inherits = FALSE)) {
-        out <- default
-      } else {
-        out <- get(basename(id), envir = where, inherits = FALSE)
-      }
-#     }
+    path <- if (grepl("^\\./", id) || dirname(id) != ".") {
+      paste0("[[\"", gsub("/", "\"]][[\"", dirname(id)), "\"]]")
+    }
+    where <- eval(parse(text = paste0("where", path)))
 
-    if (is.null(out)) {
-      if (!strict) {
-        out <- out
+    out <- if (inherits(where, "environment")) {
+      out <- if ( is.null(where)|| 
+                  !exists(basename(id), envir = where, inherits = FALSE)
+      ) {
+        default
       } else {
+        get(basename(id), envir = where, inherits = FALSE)
+      }
+    } else {
+      default
+    }
+    
+    if (identical(out, default)) {
+      if (strict == 1) {
+        conditionr::signalCondition(
+          condition = "InvalidComponent",
+          msg = c(
+            Reason = "no such component",
+            ID = id
+          ),
+          ns = "optionr",
+          type = "warning"
+        )
+      } else if (strict == 2) {
         conditionr::signalCondition(
           condition = "InvalidComponent",
           msg = c(

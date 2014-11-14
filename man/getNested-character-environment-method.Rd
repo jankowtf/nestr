@@ -6,7 +6,7 @@
 \title{Get Nested (char-env)}
 \usage{
 \S4method{getNested}{character,environment}(id, where = parent.frame(),
-  default = NULL, strict = FALSE, ...)
+  default = NULL, strict = c(0, 1, 2), ...)
 }
 \arguments{
 \item{id}{\code{\link{character}}.}
@@ -17,16 +17,21 @@
 Value to be returned if component does not exist.}
 
 \item{strict}{\code{\link{logical}}.
-\code{TRUE}: \code{id} pointing to a non-existing component triggers
-error; \code{FALSE}: \code{id} pointing to a non-existing component leads
-to return value \code{NULL}.}
+ Controls what happens when \code{id} points to a non-existing component:
+\itemize{
+         \item{0: }{ignore and return \code{FALSE} to signal that the
+             assignment process was not successful or \code{fail_value} depending
+             on the value of \code{return_status}}
+         \item{1: }{ignore and with warning and return \code{FALSE}}
+         \item{2: }{ignore and with error}
+   }}
 
 \item{...}{Further arguments to be passed to subsequent functions/methods.}
 }
 \value{
-\code{\link{ANY}}. Option value or for non-existing component
-   (i.e. wrong \code{id}): \code{NULL} if \code{strict = FALSE} and an error
-   if \code{strict = TRUE}.
+\code{\link{ANY}}. Component value or for invalid argument input
+		and non-existing component the value of \code{default} unless
+		\code{strict == 2} in which case an error is thrown.
 }
 \description{
 See generic: \code{\link[nestr]{getNested}}
@@ -57,7 +62,7 @@ rm(test)
 rm(a)
 
 ##------------------------------------------------------------------------------
-## Different `where` //
+## Explicit `where` //
 ##------------------------------------------------------------------------------
 
 where <- new.env()
@@ -66,7 +71,23 @@ getNested(id = "a/b/c", where = where)
 
 ## Clean up //
 rm(where)
-  
+
+##------------------------------------------------------------------------------
+## Different `default` //
+##------------------------------------------------------------------------------
+
+setNested(id = "test", value = 10)
+getNested(id = "test", default = NA)
+getNested(id = "z", default = NA)
+getNested(id = "z/a/b", default = NA)
+
+getNested(id = "test", default = "nope")
+getNested(id = "z", default = "nope")
+getNested(id = "z/a/b", default = "nope")
+
+## Clean up //
+rm(test)
+
 }
 }
 \author{
