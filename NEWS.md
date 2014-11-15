@@ -1,3 +1,20 @@
+# CHANGES IN nestr VERSION 0.3.1
+
+## NEW FEATURES
+
+## BUG FIXES
+
+## MAJOR CHANGES
+
+## MINOR CHANGES
+
+- modified: class structure of the object returned by `reactiveExpression()`
+- modified: documentation
+
+## MISC
+
+-----
+
 # CHANGES IN nestr VERSION 0.3
 
 ## NEW FEATURES

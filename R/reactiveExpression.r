@@ -62,6 +62,6 @@ reactiveExpression <- function(
   out$fun <- fun
   out$label <- label
   out$domain <- domain
-  structure(out, class = c("ReactiveOption", "ReactiveExpression", "environment"))
+  structure(out, class = c("ReactiveExpression", "environment"))
   
 }

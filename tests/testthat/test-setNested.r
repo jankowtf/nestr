@@ -192,6 +192,7 @@ test_that("setNested/force branch to leaf", {
   expect_error(setNested(id = "a", value = 10, strict = 2))
   expect_true(setNested(id = "a", value = 10, force = TRUE))
   expect_equal(getNested(id = "a"), 10)
+  expect_equal(getNested(id = "a/b"), NULL)
 
   ## Clean up //
   rm(a)
