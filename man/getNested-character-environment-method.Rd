@@ -31,6 +31,7 @@ Value to be returned if component does not exist.}
 \value{
 \code{\link{ANY}}. Component value or for invalid argument input
 		and non-existing component the value of \code{default} unless
+		\code{strict == 1} in which case a warning is issued or
 		\code{strict == 2} in which case an error is thrown.
 }
 \description{

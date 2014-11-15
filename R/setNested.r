@@ -15,24 +15,26 @@
 #' @param where \strong{Signature argument}.
 #'    Object containing location information.
 #' @param fail_value \code{\link{ANY}}.
-#' 		Value that is returned if assignment failed and \code{return_status = FALSE}.  
+#' 		Value that is returned if assignment failed and \code{return_status = FALSE}.
+#' @param gap \code{\link{logical}}. 
+#'    \code{TRUE}: when \code{dirname(id)} points to a non-existing parent
+#'    branch or if there are any missing branches in the nested structure, 
+#'    then auto-create all missing branches; 
+#'    \code{FALSE}: either return with \code{fail_value} or throw a condition 
+#' 		in such cases (depending on \code{strict}); 
+#'    Default: \code{TRUE} as this seems to be most practical/convenient for 
+#'    actual applications.  
 #' @param force \code{\link{logical}}. 
 #'    \code{TRUE}: when \code{dirname(id)} points to a \emph{leaf} instead of a 
 #'    \emph{branch} (i.e. \code{dirname(id)} is not an \code{environment}), 
-#'    overwrite it to turn it into a branch;
-#'    \code{FALSE}: either return with \code{FALSE} or throw error in such cases
+#'    overwrite it to turn it into a branch and vice versa when \code{id} points
+#'    to a branch that is to be transformed into a leaf;
+#'    \code{FALSE}: either return with \code{fail_value} or throw error in such cases
 #'    (depending on value of \code{strict}); 
-#' @param gap \code{\link{logical}}. 
-#'    \code{TRUE}: when \code{dirname(id)} points to a non-existing parent
-#'    branch or if there are any missing branches in the tree structure, 
-#'    then auto-create all missing branches; 
-#'    \code{FALSE}: either return with \code{FALSE} or throw error in such cases
-#'    (depending on \code{strict}); 
-#'    Default: \code{TRUE} as this seems to be most practical/convenient for 
-#'    actual applications.
 #' @param must_exist \code{\link{logical}}. 
-#'    \code{TRUE}: \code{id} pointing to a non-existing object value either triggers
-#'    an error or results in return value \code{FALSE} (depending on \code{strict}); 
+#'    \code{TRUE}: \code{id} pointing to a non-existing component either results 
+#'    in return value \code{fail_value} or triggers a condition
+#'    (depending on \code{strict}); 
 #'    \code{FALSE}: object value that \code{id} points to is set.
 #' @param reactive \code{\link{logical}}. 
 #'    \code{TRUE}: set reactive object value via 
@@ -43,7 +45,8 @@
 #' @param return_status \code{\link{logical}}.
 #' 		\code{TRUE}: return status (\code{TRUE} for successful assignment, 
 #' 			\code{FALSE} for failed assignment);
-#'    \code{FALSE}: return actual assignment value (\code{value}).
+#'    \code{FALSE}: return actual assignment value (\code{value}) or 
+#'    \code{fail_value}.
 #' @param strict \code{\link{logical}}.
 #' 		Controls what happens when \code{id} points to a non-existing component:
 #'    \itemize{
@@ -54,10 +57,8 @@
 #' 			\item{2: }{ignore and with error}
 #'   	}
 #' @param typed \code{\link{logical}}. 
-#'    Implies that \code{must_exist} is automatically set to \code{TRUE}.
-#'    \code{TRUE}: \code{class(value)} must match the class of the existing 
-#'    object value; 
-#'    \code{FALSE}: object value that \code{id} points to is set without class check.
+#'    \code{TRUE}: create an implicitly typed component; 
+#'    \code{FALSE}: create a regular component.
 #' @param Further arguments to be passed along to subsequent functions.
 #'    In particular: 
 #'    \itemize{
@@ -495,14 +496,15 @@ setMethod(
   ## function is run:
   is_reactive_value <- inherits(value, "ReactiveExpression")
   
+  ## Actual assignment //
   if (!reactive || reactive_exist && !typed && !is_reactive_value) {  
     if (!typed) {
       path <- paste0("[[\"", gsub("/", "\"]][[\"", id), "\"]]")
       expr <- paste0(envir_name, path, " <- value")
       eval(parse(text = expr))  
     } else {  
-      setTyped(id = basename(id), value = value, where = branch_value, 
-               strict = strict, ...)
+      setTyped(id = basename(id), value = value, 
+        where = branch_value, strict = strict, ...)
     }
   } else {
     setShinyReactive(id = basename(id), value = value, 
